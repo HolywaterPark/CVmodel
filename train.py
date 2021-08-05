@@ -66,7 +66,7 @@ def cifar_10(aa:str):
     )
 
     batch_size = 128
-    epochs = 50
+    epochs = 200
     learning_rate = 0.01
 
     train_dataset = datasets.CIFAR10(
@@ -101,6 +101,7 @@ def cifar_10(aa:str):
 
     train_acc_list = []
     val_acc_list = []
+
     for epoch in range(epochs):
         train_loss, train_acc = train(model, optimizer, criterion, train_loader)
         val_loss, val_acc = evaluate(model, criterion, test_loader)
@@ -110,6 +111,3 @@ def cifar_10(aa:str):
         print("[Epoch :  {}]".format(epoch + 1))
         print("train loss : {:.5f}, acc : {:.5f}".format(train_loss, train_acc))
         print("val loss : {:.5f}, acc : {:.5f}".format(val_loss, val_acc))
-
-    plt.plot(train_acc_list, val_acc_list)
-    plt.show()
