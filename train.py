@@ -2,43 +2,15 @@ import torch
 from torch import nn
 from torchvision import datasets, transforms
 from torch.utils.data.dataset import random_split
-from VGG.VGG19 import VGG19
-from ResNet.Resnet import ResNet18
+from VGG.VGG import VGG11, VGG13, VGG16, VGG19
+from ResNet.Resnet import ResNet18, ResNet34
+import matplotlib.pyplot as plt
+import typer
+
+app = typer.Typer()
 
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda:2" if USE_CUDA else "cpu")
-
-transformer = transforms.Compose(
-    [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-)
-
-batch_size = 32
-epochs = 20
-learning_rate = 0.01
-
-train_dataset = datasets.CIFAR10(
-    root="./data", train=True, download=True, transform=transformer
-)
-test_dataset = datasets.CIFAR10(
-    root="./data", train=False, download=True, transform=transformer
-)
-
-train_dataset, _ = random_split(train_dataset, [10000, 40000])
-# test_dataset, _ = random_split(test_dataset, [2000, 8000])
-
-train_loader = torch.utils.data.DataLoader(
-    dataset=train_dataset, batch_size=batch_size, shuffle=True
-)
-test_loader = torch.utils.data.DataLoader(
-    dataset=test_dataset, batch_size=batch_size, shuffle=False
-)
-
-# model = VGG19()
-model = ResNet18()
-model = model.to(device)
-criterion = nn.CrossEntropyLoss().to(device)
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
 
 def train(model, optimizer, criterion, train_loader):
     model.train()
@@ -65,7 +37,6 @@ def train(model, optimizer, criterion, train_loader):
 
     return epoch_loss, epoch_acc
 
-
 def evaluate(model, criterion, test_loader):
     model.eval()
     val_correct = 0.0
@@ -88,11 +59,52 @@ def evaluate(model, criterion, test_loader):
 
     return val_epoch_loss, val_epoch_acc
 
+@app.command("cifar10")
+def pp(aa:str):
+    transformer = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+    )
 
-for epoch in range(epochs):
-    train_loss, train_acc = train(model, optimizer, criterion, train_loader)
-    val_loss, val_acc = evaluate(model, criterion, test_loader)
+    batch_size = 128
+    epochs = 50
+    learning_rate = 0.01
 
-    print("[Epoch :  {}]".format(epoch + 1))
-    print("train loss : {:.5f}, acc : {:.5f}".format(train_loss, train_acc))
-    print("val loss : {:.5f}, acc : {:.5f}".format(val_loss, val_acc))
+    train_dataset = datasets.CIFAR10(
+        root="./data", train=True, download=True, transform=transformer
+    )
+    test_dataset = datasets.CIFAR10(
+        root="./data", train=False, download=True, transform=transformer
+    )
+
+    train_loader = torch.utils.data.DataLoader(
+        dataset=train_dataset, batch_size=batch_size, shuffle=True
+    )
+    test_loader = torch.utils.data.DataLoader(
+        dataset=test_dataset, batch_size=batch_size, shuffle=False
+    )
+
+    if aa == "VGG19":
+        model = VGG19()
+    elif aa == "ResNet18":
+        model = ResNet18()
+    elif aa == "ResNet34":
+        model = ResNet34()
+
+    model = model.to(device)
+    criterion = nn.CrossEntropyLoss().to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    train_acc_list = []
+    val_acc_list = []
+    for epoch in range(epochs):
+        train_loss, train_acc = train(model, optimizer, criterion, train_loader)
+        val_loss, val_acc = evaluate(model, criterion, test_loader)
+        train_acc_list.append(train_acc)
+        val_acc_list.append(val_acc)
+
+        print("[Epoch :  {}]".format(epoch + 1))
+        print("train loss : {:.5f}, acc : {:.5f}".format(train_loss, train_acc))
+        print("val loss : {:.5f}, acc : {:.5f}".format(val_loss, val_acc))
+
+    plt.plot(train_acc_list, val_acc_list)
+    plt.show()
