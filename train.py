@@ -3,7 +3,7 @@ from torch import nn
 from torchvision import datasets, transforms
 from torch.utils.data.dataset import random_split
 from VGG.VGG import VGG11, VGG13, VGG16, VGG19
-from ResNet.Resnet import ResNet18, ResNet34
+from ResNet.Resnet import ResNet18, ResNet34, ResNet50
 import matplotlib.pyplot as plt
 import typer
 
@@ -60,7 +60,7 @@ def evaluate(model, criterion, test_loader):
     return val_epoch_loss, val_epoch_acc
 
 @app.command("cifar10")
-def pp(aa:str):
+def cifar_10(aa:str):
     transformer = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
@@ -76,6 +76,8 @@ def pp(aa:str):
         root="./data", train=False, download=True, transform=transformer
     )
 
+    train_dataset, _ = random_split(train_dataset, [10000,40000])
+
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset, batch_size=batch_size, shuffle=True
     )
@@ -89,6 +91,9 @@ def pp(aa:str):
         model = ResNet18()
     elif aa == "ResNet34":
         model = ResNet34()
+    elif aa == "ResNet50":
+        model = ResNet50()
+
 
     model = model.to(device)
     criterion = nn.CrossEntropyLoss().to(device)
