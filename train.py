@@ -3,6 +3,7 @@ import torch
 from torch import nn
 from torchvision import datasets, transforms
 from torch.utils.data.dataset import random_split
+from torchvision.utils import make_grid
 import matplotlib.pyplot as plt
 import typer
 
@@ -133,16 +134,22 @@ def DCGAN():
         [transforms.Resize((64,64)), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
 
-    batch_size = 128
-    epochs = 20
+    batch_size = 32
+    epochs = 200
     learning_rate = 0.0002
 
     train_dataset = datasets.CIFAR10(
         root="./data", train=True, download=True, transform=transformer
     )
+    test_dataset = datasets.CIFAR10(
+        root="./data", train=False, download=True, transform=transformer
+    )
 
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset, batch_size=batch_size, shuffle=True
+    )
+    test_loader = torch.utils.data.DataLoader(
+        dataset=test_dataset, batch_size=batch_size, shuffle=False
     )
 
     modelG = Generator().to(device)
@@ -157,6 +164,12 @@ def DCGAN():
 
     G_loss_list = []
     D_loss_list = []
+
+    for x,y in train_loader:
+        ll = x.size(0)
+        break
+
+    test_noise = torch.randn(ll, 100, 1, 1, device=device)
 
     for epoch in range(epochs):
         for i, (x, y) in enumerate(train_loader):
@@ -183,7 +196,7 @@ def DCGAN():
             modelG.zero_grad()
             y.fill_(1)
             outputs = modelD(fake_data).view(-1)
-            loss_G= criterion(outputs, y)
+            loss_G = criterion(outputs, y)
             loss_G.backward()
             optimizerG.step()
 
@@ -193,6 +206,16 @@ def DCGAN():
             if i % 50 == 0:
                 print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t'
                       % (epoch, epochs, i, len(train_loader), loss_D.item(), loss_G.item()))
+
+        if epoch % 20 == 0:
+            with torch.no_grad():
+                fake_test = modelG(test_noise)
+                plt.imshow(np.transpose(make_grid(fake_test.cpu())))
+                plt.savefig('epoch{:}.png'.format(epoch+1))
+
+
+    val_loss, val_acc = evaluate(modelG, criterion, test_loader)
+    print('val_loss : {:.5f} | val_acc : {:.5f}'.format(val_loss, val_acc))
 
     plt.plot(G_loss_list, label="G")
     plt.plot(D_loss_list, label="D")
