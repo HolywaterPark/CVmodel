@@ -20,10 +20,10 @@ class Generator(nn.Module):
         self.convt5 = nn.ConvTranspose2d(128, 3, kernel_size=4, stride=2, padding=1, bias=False)
 
     def forward(self, x):
-        x = F.relu(self.bn1(self.convt1(x)))
-        x = F.relu(self.bn2(self.convt2(x)))
-        x = F.relu(self.bn3(self.convt3(x)))
-        x = F.relu(self.bn4(self.convt4(x)))
+        x = F.relu(self.bn1(self.convt1(x)), True)
+        x = F.relu(self.bn2(self.convt2(x)), True)
+        x = F.relu(self.bn3(self.convt3(x)), True)
+        x = F.relu(self.bn4(self.convt4(x)), True)
         x = self.convt5(x)
         return F.tanh(x)
 
@@ -32,7 +32,6 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.conv1 = nn.Conv2d(3, 128, kernel_size=4, stride=2, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(128)
 
         self.conv2 = nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(256)
@@ -46,10 +45,10 @@ class Discriminator(nn.Module):
         self.conv5 = nn.Conv2d(1024, 1, kernel_size=4, stride=1, padding=0, bias=False)
 
     def forward(self, x):
-        x = F.leaky_relu(self.bn1(self.conv1(x)), 0.2)
-        x = F.leaky_relu(self.bn2(self.conv2(x)), 0.2)
-        x = F.leaky_relu(self.bn3(self.conv3(x)), 0.2)
-        x = F.leaky_relu(self.bn4(self.conv4(x)), 0.2)
+        x = F.leaky_relu(self.conv1(x), 0.2, True)
+        x = F.leaky_relu(self.bn2(self.conv2(x)), 0.2, True)
+        x = F.leaky_relu(self.bn3(self.conv3(x)), 0.2, True)
+        x = F.leaky_relu(self.bn4(self.conv4(x)), 0.2, True)
         x = self.conv5(x)
         return F.sigmoid(x)
 
