@@ -16,6 +16,7 @@ app = typer.Typer()
 USE_CUDA = torch.cuda.is_available()
 device = torch.device("cuda:2" if USE_CUDA else "cpu")
 
+
 def train(model, optimizer, criterion, train_loader):
     model.train()
     train_correct = 0.0
@@ -41,6 +42,7 @@ def train(model, optimizer, criterion, train_loader):
 
     return epoch_loss, epoch_acc
 
+
 def evaluate(model, criterion, test_loader):
     model.eval()
     val_correct = 0.0
@@ -63,17 +65,18 @@ def evaluate(model, criterion, test_loader):
 
     return val_epoch_loss, val_epoch_acc
 
+
 def weights_init(m):
     classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
+    if classname.find("Conv") != -1:
         nn.init.normal_(m.weight.data, 0.0, 0.02)
-    elif classname.find('BatchNorm') != -1:
+    elif classname.find("BatchNorm") != -1:
         nn.init.normal_(m.weight.data, 1.0, 0.02)
         nn.init.constant_(m.bias.data, 0)
 
 
 @app.command("cifar10")
-def cifar_10(n:str):
+def cifar_10(n: str):
     transformer = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
@@ -105,7 +108,6 @@ def cifar_10(n:str):
     elif n == "ResNet50":
         model = ResNet50()
 
-
     model = model.to(device)
     criterion = nn.CrossEntropyLoss().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -126,12 +128,17 @@ def cifar_10(n:str):
     plt.plot(train_acc_list)
     plt.plot(val_acc_list)
     plt.show()
-    plt.savefig('ResNet50.png')
+    plt.savefig("ResNet50.png")
+
 
 @app.command("DCGAN")
 def DCGAN():
     transformer = transforms.Compose(
-        [transforms.Resize((64,64)), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+        [
+            transforms.Resize((64, 64)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        ]
     )
 
     batch_size = 32
@@ -159,13 +166,17 @@ def DCGAN():
     modelD.apply(weights_init)
 
     criterion = nn.BCELoss().to(device)
-    optimizerG = torch.optim.Adam(modelG.parameters(), lr=learning_rate, betas=(0.5, 0.999))
-    optimizerD = torch.optim.Adam(modelD.parameters(), lr=learning_rate, betas=(0.5, 0.999))
+    optimizerG = torch.optim.Adam(
+        modelG.parameters(), lr=learning_rate, betas=(0.5, 0.999)
+    )
+    optimizerD = torch.optim.Adam(
+        modelD.parameters(), lr=learning_rate, betas=(0.5, 0.999)
+    )
 
     G_loss_list = []
     D_loss_list = []
 
-    for x,y in train_loader:
+    for x, y in train_loader:
         ll = x.size(0)
         break
 
@@ -204,18 +215,27 @@ def DCGAN():
             D_loss_list.append(loss_D.item())
             # Output training stats
             if i % 50 == 0:
-                print('[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t'
-                      % (epoch, epochs, i, len(train_loader), loss_D.item(), loss_G.item()))
+                print(
+                    "[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t"
+                    % (
+                        epoch,
+                        epochs,
+                        i,
+                        len(train_loader),
+                        loss_D.item(),
+                        loss_G.item(),
+                    )
+                )
 
-        if epoch % 20 == 0:
+        if epoch % 10 == 0:
             with torch.no_grad():
                 fake_test = modelG(test_noise)
                 plt.imshow(np.transpose(make_grid(fake_test.cpu())))
-                plt.savefig('epoch{:}.png'.format(epoch+1))
-
+                plt.show()
+                plt.savefig("epoch{:}.png".format(epoch))
 
     val_loss, val_acc = evaluate(modelG, criterion, test_loader)
-    print('val_loss : {:.5f} | val_acc : {:.5f}'.format(val_loss, val_acc))
+    print("val_loss : {:.5f} | val_acc : {:.5f}".format(val_loss, val_acc))
 
     plt.plot(G_loss_list, label="G")
     plt.plot(D_loss_list, label="D")
@@ -223,5 +243,4 @@ def DCGAN():
     plt.ylabel("Loss")
     plt.legend()
     plt.show()
-    plt.savefig('DCGAN.png')
-
+    plt.savefig("DCGAN.png")
