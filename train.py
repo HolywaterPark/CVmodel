@@ -3,11 +3,10 @@ import torch
 from torch import nn
 from torchvision import datasets, transforms
 from torch.utils.data.dataset import random_split
-from torchvision.utils import make_grid
 import matplotlib.pyplot as plt
 import typer
 
-from VGG.VGG import VGG11, VGG13, VGG16, VGG19
+from VGG.VGG import VGG19
 from ResNet.Resnet import ResNet18, ResNet34, ResNet50
 from DCGAN import Generator, Discriminator
 
@@ -136,13 +135,12 @@ def DCGAN():
     transformer = transforms.Compose(
         [
             transforms.Resize((64, 64)),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            transforms.ToTensor()
         ]
     )
 
     batch_size = 32
-    epochs = 200
+    epochs = 3
     learning_rate = 0.0002
 
     train_dataset = datasets.CIFAR10(
@@ -176,15 +174,8 @@ def DCGAN():
     G_loss_list = []
     D_loss_list = []
 
-    for x, y in train_loader:
-        ll = x.size(0)
-        break
-
-    test_noise = torch.randn(ll, 100, 1, 1, device=device)
-
     for epoch in range(epochs):
         for i, (x, y) in enumerate(train_loader):
-            #### Discriminator
             x = x.to(device)
             y = torch.full((x.size(0),), 1, dtype=torch.float, device=device)
 
@@ -203,7 +194,7 @@ def DCGAN():
             loss_D = loss_real + loss_fake
             optimizerD.step()
 
-            #### Generator
+
             modelG.zero_grad()
             y.fill_(1)
             outputs = modelD(fake_data).view(-1)
@@ -213,7 +204,6 @@ def DCGAN():
 
             G_loss_list.append(loss_G.item())
             D_loss_list.append(loss_D.item())
-            # Output training stats
             if i % 50 == 0:
                 print(
                     "[%d/%d][%d/%d]\tLoss_D: %.4f\tLoss_G: %.4f\t"
@@ -227,20 +217,4 @@ def DCGAN():
                     )
                 )
 
-        if epoch % 10 == 0:
-            with torch.no_grad():
-                fake_test = modelG(test_noise)
-                plt.imshow(np.transpose(make_grid(fake_test.cpu())))
-                plt.show()
-                plt.savefig("epoch{:}.png".format(epoch))
 
-    val_loss, val_acc = evaluate(modelG, criterion, test_loader)
-    print("val_loss : {:.5f} | val_acc : {:.5f}".format(val_loss, val_acc))
-
-    plt.plot(G_loss_list, label="G")
-    plt.plot(D_loss_list, label="D")
-    plt.xlabel("iterations")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.show()
-    plt.savefig("DCGAN.png")
