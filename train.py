@@ -41,6 +41,7 @@ def train(model, optimizer, criterion, train_loader):
 
     return epoch_loss, epoch_acc
 
+
 def evaluate(model, criterion, test_loader):
     model.eval()
     val_correct = 0.0
@@ -62,6 +63,7 @@ def evaluate(model, criterion, test_loader):
     val_epoch_acc = val_correct.float() * 100 / total_test
 
     return val_epoch_loss, val_epoch_acc
+
 
 def weights_init_GAN(model):
     classname = model.__class__.__name__
@@ -113,7 +115,6 @@ def DCGAN(train_loader):
             loss_D = loss_real + loss_fake
             optimizerD.step()
 
-
             modelG.zero_grad()
             y.fill_(1)
             outputs = modelD(fake_data).view(-1)
@@ -136,6 +137,7 @@ def DCGAN(train_loader):
                     )
                 )
 
+
 def cifar_10(batch_size, transformer):
     train_dataset = datasets.CIFAR10(
         root="./data", train=True, download=True, transform=transformer
@@ -153,6 +155,7 @@ def cifar_10(batch_size, transformer):
 
     return train_loader, test_loader
 
+
 @app.command("train_test")
 def train_func_test(dataset_name: str, neuralnet_name: str):
     batch_size = 128
@@ -162,32 +165,41 @@ def train_func_test(dataset_name: str, neuralnet_name: str):
     if neuralnet_name == "VGG19":
         model = VGG19()
         transformer = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
         )
     elif neuralnet_name == "ResNet18":
         model = ResNet18()
         transformer = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
         )
     elif neuralnet_name == "ResNet34":
         model = ResNet34()
         transformer = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
         )
     elif neuralnet_name == "ResNet50":
         model = ResNet50()
         transformer = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
         )
     elif neuralnet_name == "DCGAN":
         transformer = transforms.Compose(
-            [
-                transforms.Resize((64, 64)),
-                transforms.ToTensor()
-            ]
+            [transforms.Resize((64, 64)), transforms.ToTensor()]
         )
 
-    if dataset_name == 'cifar-10':
+    if dataset_name == "cifar-10":
         train_loader, test_loader = cifar_10(batch_size, transformer)
 
     if neuralnet_name == "DCGAN":
@@ -214,5 +226,3 @@ def train_func_test(dataset_name: str, neuralnet_name: str):
     plt.plot(train_acc_list)
     plt.plot(val_acc_list)
     plt.show()
-
-
