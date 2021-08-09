@@ -6,9 +6,9 @@ from torch.utils.data.dataset import random_split
 import matplotlib.pyplot as plt
 import typer
 
-from VGG.VGG import VGG19
-from ResNet.Resnet import ResNet18, ResNet34, ResNet50
-from DCGAN import Generator, Discriminator
+from model.VGG import VGG19
+from model.Resnet import ResNet18, ResNet34, ResNet50
+from model.DCGAN import Generator, Discriminator
 
 app = typer.Typer()
 
