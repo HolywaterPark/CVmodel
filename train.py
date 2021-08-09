@@ -65,103 +65,24 @@ def evaluate(model, criterion, test_loader):
     return val_epoch_loss, val_epoch_acc
 
 
-def weights_init(m):
-    classname = m.__class__.__name__
+def weights_init_GAN(model):
+    classname = model.__class__.__name__
     if classname.find("Conv") != -1:
-        nn.init.normal_(m.weight.data, 0.0, 0.02)
+        nn.init.normal_(model.weight.data, 0.0, 0.02)
     elif classname.find("BatchNorm") != -1:
-        nn.init.normal_(m.weight.data, 1.0, 0.02)
-        nn.init.constant_(m.bias.data, 0)
+        nn.init.normal_(model.weight.data, 1.0, 0.02)
+        nn.init.constant_(model.bias.data, 0)
 
 
-@app.command("cifar10")
-def cifar_10(n: str):
-    transformer = transforms.Compose(
-        [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
-    )
-
-    batch_size = 128
-    epochs = 300
-    learning_rate = 0.01
-
-    train_dataset = datasets.CIFAR10(
-        root="./data", train=True, download=True, transform=transformer
-    )
-    test_dataset = datasets.CIFAR10(
-        root="./data", train=False, download=True, transform=transformer
-    )
-
-    train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset, batch_size=batch_size, shuffle=True
-    )
-    test_loader = torch.utils.data.DataLoader(
-        dataset=test_dataset, batch_size=batch_size, shuffle=False
-    )
-
-    if n == "VGG19":
-        model = VGG19()
-    elif n == "ResNet18":
-        model = ResNet18()
-    elif n == "ResNet34":
-        model = ResNet34()
-    elif n == "ResNet50":
-        model = ResNet50()
-
-    model = model.to(device)
-    criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-    train_acc_list = []
-    val_acc_list = []
-
-    for epoch in range(epochs):
-        train_loss, train_acc = train(model, optimizer, criterion, train_loader)
-        val_loss, val_acc = evaluate(model, criterion, test_loader)
-        train_acc_list.append(train_acc.cpu().numpy().astype(np.float32))
-        val_acc_list.append(val_acc.cpu().numpy().astype(np.float32))
-
-        print("[Epoch :  {}]".format(epoch + 1))
-        print("train loss : {:.5f}, acc : {:.5f}".format(train_loss, train_acc))
-        print("val loss : {:.5f}, acc : {:.5f}".format(val_loss, val_acc))
-
-    plt.plot(train_acc_list)
-    plt.plot(val_acc_list)
-    plt.show()
-    plt.savefig("ResNet50.png")
-
-
-@app.command("DCGAN")
-def DCGAN():
-    transformer = transforms.Compose(
-        [
-            transforms.Resize((64, 64)),
-            transforms.ToTensor()
-        ]
-    )
-
-    batch_size = 32
+def DCGAN(train_loader):
     epochs = 3
     learning_rate = 0.0002
-
-    train_dataset = datasets.CIFAR10(
-        root="./data", train=True, download=True, transform=transformer
-    )
-    test_dataset = datasets.CIFAR10(
-        root="./data", train=False, download=True, transform=transformer
-    )
-
-    train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset, batch_size=batch_size, shuffle=True
-    )
-    test_loader = torch.utils.data.DataLoader(
-        dataset=test_dataset, batch_size=batch_size, shuffle=False
-    )
 
     modelG = Generator().to(device)
     modelD = Discriminator().to(device)
 
-    modelG.apply(weights_init)
-    modelD.apply(weights_init)
+    modelG.apply(weights_init_GAN)
+    modelD.apply(weights_init_GAN)
 
     criterion = nn.BCELoss().to(device)
     optimizerG = torch.optim.Adam(
@@ -194,7 +115,6 @@ def DCGAN():
             loss_D = loss_real + loss_fake
             optimizerD.step()
 
-
             modelG.zero_grad()
             y.fill_(1)
             outputs = modelD(fake_data).view(-1)
@@ -218,3 +138,91 @@ def DCGAN():
                 )
 
 
+def cifar_10(batch_size, transformer):
+    train_dataset = datasets.CIFAR10(
+        root="./data", train=True, download=True, transform=transformer
+    )
+    test_dataset = datasets.CIFAR10(
+        root="./data", train=False, download=True, transform=transformer
+    )
+
+    train_loader = torch.utils.data.DataLoader(
+        dataset=train_dataset, batch_size=batch_size, shuffle=True
+    )
+    test_loader = torch.utils.data.DataLoader(
+        dataset=test_dataset, batch_size=batch_size, shuffle=False
+    )
+
+    return train_loader, test_loader
+
+
+@app.command("train_test")
+def train_func_test(dataset_name: str, neuralnet_name: str):
+    batch_size = 128
+    epochs = 300
+    learning_rate = 0.01
+
+    if neuralnet_name == "VGG19":
+        model = VGG19()
+        transformer = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
+        )
+    elif neuralnet_name == "ResNet18":
+        model = ResNet18()
+        transformer = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
+        )
+    elif neuralnet_name == "ResNet34":
+        model = ResNet34()
+        transformer = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
+        )
+    elif neuralnet_name == "ResNet50":
+        model = ResNet50()
+        transformer = transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+            ]
+        )
+    elif neuralnet_name == "DCGAN":
+        transformer = transforms.Compose(
+            [transforms.Resize((64, 64)), transforms.ToTensor()]
+        )
+
+    if dataset_name == "cifar-10":
+        train_loader, test_loader = cifar_10(batch_size, transformer)
+
+    if neuralnet_name == "DCGAN":
+        DCGAN(train_loader)
+        return
+
+    model = model.to(device)
+    criterion = nn.CrossEntropyLoss().to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    train_acc_list = []
+    val_acc_list = []
+
+    for epoch in range(epochs):
+        train_loss, train_acc = train(model, optimizer, criterion, train_loader)
+        val_loss, val_acc = evaluate(model, criterion, test_loader)
+        train_acc_list.append(train_acc.cpu().numpy().astype(np.float32))
+        val_acc_list.append(val_acc.cpu().numpy().astype(np.float32))
+
+        print("[Epoch :  {}]".format(epoch + 1))
+        print("train loss : {:.5f}, acc : {:.5f}".format(train_loss, train_acc))
+        print("val loss : {:.5f}, acc : {:.5f}".format(val_loss, val_acc))
+
+    plt.plot(train_acc_list)
+    plt.plot(val_acc_list)
+    plt.show()
