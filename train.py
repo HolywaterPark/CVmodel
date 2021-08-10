@@ -156,8 +156,8 @@ def cifar_10(batch_size, transformer):
     return train_loader, test_loader
 
 
-@app.command("train_test")
-def train_func_test(dataset_name: str, neuralnet_name: str):
+@app.command("learn")
+def learn_model(dataset_name: str, neuralnet_name: str):
     batch_size = 128
     epochs = 300
     learning_rate = 0.01
